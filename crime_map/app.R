@@ -11,30 +11,27 @@ ui <- navbarPage(title = "Crime map",
                                      absolutePanel(id = "controls", class="panel panel-default", draggable = FALSE, fixed = TRUE, 
                                                    top = 85, left = 80, right = "auto", bottom = "auto", height = "auto", width = 260,
                                           h3("Instructions"),
-                                          p('This Shiny app allows you to interactively visualise Greater Manchester Police 
-                                            crime data downloaded from', a("data.police.uk", href = "https://data.police.uk")),
+                                          p('This ', a('shiny', href = 'http://shiny.rstudio.com'), 'app allows you to interactively visualise Greater Manchester Police 
+                                            crime data downloaded from', a('data.police.uk', href = 'https://data.police.uk')),
                                           p('Use the dropdown menus below to select the borough and crime category 
                                                    of interest.'), 
                                           p('Then zoom and pan around the map to explore clusters of crime. Click on
                                                    the red circles for information on individual crimes.'), 
                                           p('The map will also update when you interact with the time series chart.'),
-                                          br(),
-                                          br(),
-                                          br(),
+                                          hr(),
                                           div(uiOutput('borough'), style = "color:#525252", align = "left"),
                                           div(uiOutput('category'), style = "color:#525252", align = "left")))),
                             column(8,
                                    br(),
                                    div(h4(textOutput("title"), align = "left"), style = "color:#525252"),
-                                   div(h5(textOutput("period"), align = "left"), style = "color:#525252"),
                                    fluidRow(
-                                    leafletOutput("map", width = "100%", height = "350"),
+                                    leafletOutput("map", width = "100%", height = "400"),
                                             absolutePanel(id = "controls", class="panel panel-default", draggable = TRUE, fixed = TRUE,
-                                                 top = 190, left = "auto", right = 160, bottom = "auto", height = "20", width = "200",
+                                                 top = 160, left = "auto", right = 160, bottom = "auto", height = "20", width = "220",
                                                  strong(textOutput("frequency"), style = "color:red", align = "left"))),
                                    fluidRow(
                                      br(),
-                                     dygraphOutput("dygraph", width = "100%", height = "100px")))),
+                                     dygraphOutput("dygraph", width = "100%", height = "130px")))),
                  tabPanel("About",
                           fluidRow(
                             column(8, offset = 1,
@@ -58,13 +55,9 @@ server <- function(input, output, session) {
       filter(borough == input$borough & category == input$category)})
   
   output$title <- renderText({
-    paste0(input$category, " in ", input$borough)
-  })
-  
-  output$period <- renderText({
     req(input$dygraph_date_window[[1]])
-    paste0("(", strftime(input$dygraph_date_window[[1]], "%B %Y"), " - ", 
-           strftime(input$dygraph_date_window[[2]], "%B %Y"), ")")
+    paste0(input$category, " in ", input$borough, " between ", strftime(input$dygraph_date_window[[1]], "%B %Y"), " and ", 
+           strftime(input$dygraph_date_window[[2]], "%B %Y"))
   })  
   
   output$dygraph <- renderDygraph({
