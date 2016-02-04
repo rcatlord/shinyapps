@@ -2,11 +2,8 @@
 
 <img src="https://github.com/cat-lord/shinyapps/blob/master/images/STATS19_scanner.jpg" alt="STATS19_scanner" width="500">
 
-##### About
+##### Overview
 This Shiny application is designed to allow the user to interrogate road casualties reported in Greater London between 2005 and 2014.
-
-##### How to use
-The filter panel allows the user to plot reported road casualties by date range, borough, mode of travel and severity onto the map. Details of the collision can be obtained by clicking on any of the points. Information on the temporal and demographic profile of casualties are provided under the relevant tabs.
 
 ##### Data sources
 STATS19 road traffic collision data for Greater London are available from [Transport for London]
