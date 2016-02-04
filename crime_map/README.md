@@ -1,4 +1,4 @@
-### crime map
+### Crime map
 
 <img src="https://github.com/cat-lord/shinyapps/blob/master/images/crime_map.jpg" alt="crime_map" width="500">
 
