@@ -35,7 +35,7 @@ ui <- navbarPage(title = "Crime map",
                  tabPanel("About",
                           fluidRow(
                             column(8, offset = 1,
-                                   includeMarkdown("about.md")))))
+                                   includeMarkdown("about.md"), style = "color:grey"))))
 
 server <- function(input, output, session) {
   
@@ -75,7 +75,7 @@ server <- function(input, output, session) {
         dyAxis("y", axisLabelWidth = 20) %>% 
         dyOptions(retainDateWindow = TRUE, includeZero = TRUE, drawGrid = FALSE,
                   axisLineWidth = 2, axisLineColor = "#525252", axisLabelFontSize = 11, axisLabelColor = "#525252") %>% 
-        dyLegend(width = 200) %>% 
+        dyLegend(width = 200, show = "follow") %>% 
         dyCSS("dygraph.css")
   })
   
@@ -89,6 +89,16 @@ server <- function(input, output, session) {
   
   output$map <- renderLeaflet({
     
+    boundary <- boroughs[boroughs$CTYUA12NM == input$borough,]
+    bb <- as.vector(boundary@bbox)
+    
+    leaflet(boroughs) %>%
+      addProviderTiles("CartoDB.Positron") %>% 
+      fitBounds(bb[1], bb[2], bb[3], bb[4]) %>% 
+      addPolygons(data = boroughs, color = "#525252", weight = 2, fillColor = "transparent")
+  })
+  
+  observe({
     req(input$dygraph_date_window[[1]])
     
     popup <- paste0("<strong>Location: </strong>", points()$location,
@@ -96,10 +106,8 @@ server <- function(input, output, session) {
                     "<br><strong>Category: </strong>", points()$category,
                     "<br><strong>Date: </strong>", points()$month)
     
-      leaflet(points()) %>%
-      addProviderTiles("CartoDB.Positron") %>% 
-      fitBounds(~min(long), ~min(lat), ~max(long), ~max(lat)) %>% 
-      addPolygons(data = boroughs, color = "#525252", weight = 2, fillColor = "transparent") %>% 
+    leafletProxy("map", data = points()) %>% 
+      clearMarkerClusters() %>% 
       addCircleMarkers(data = points(), ~long, ~lat, radius = 5, stroke = TRUE,
                        color = "red", weight = 3, opacity = 0.8, fillColor = "white",
                        popup = popup,
@@ -110,8 +118,8 @@ server <- function(input, output, session) {
                          spiderfyOnMaxZoom = TRUE, 
                          # maximum cluster radius in pixels from central marker
                          maxClusterRadius = 50))
-
   })
+  
  
   dataInBounds <- reactive({
     df <- points()
@@ -135,7 +143,6 @@ server <- function(input, output, session) {
     
     paste0(df$n, " crimes displayed")
   })
-  
   
 }
 
