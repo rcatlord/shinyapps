@@ -91,7 +91,7 @@ body <- dashboardBody(
                                   Contains Ordnance Survey data © Crown copyright and database right [2015]."),
                                 br(),
                                 p("Repo here: ",
-                                  a(href = "https://github.com/hpartridge/STATS19_scanner", icon("github"), target = "_blank")
+                                  a(href = "https://github.com/cat-lord/shinyapps/tree/master/STATS19_scanner", icon("github"), target = "_blank")
                                 ))
                )))))
 
