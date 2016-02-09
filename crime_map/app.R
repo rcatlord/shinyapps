@@ -63,12 +63,12 @@ server <- function(input, output, session) {
   output$dygraph <- renderDygraph({
     req(input$category)
       df <- selected_crimes() %>% 
-        mutate(month = as.Date(month, format = '%Y-%m-%d')) %>%
-        group_by(month) %>%
+        mutate(date = as.Date(date, format = '%Y-%m-%d')) %>%
+        group_by(date) %>%
         summarize(n = n()) %>%
-        select(month, n)
+        select(date, n)
       
-      df.xts <- xts(df$n, order.by = as.Date(df$month, "%Y-%m-%d"), frequency = 12)
+      df.xts <- xts(df$n, order.by = as.Date(df$date, "%Y-%m-%d"), frequency = 12)
       
       dygraph(df.xts, main = NULL) %>%
         dySeries("V1", label = "Crimes", color = "red", fillGraph = TRUE, strokeWidth = 2, drawPoints = TRUE, pointSize = 4) %>%
@@ -80,14 +80,15 @@ server <- function(input, output, session) {
   })
   
   points <- reactive({crimes %>% 
-      mutate(month = as.Date(month, format = '%Y-%m-%d')) %>%
+      mutate(date = as.Date(date, format = '%Y-%m-%d')) %>%
       filter(borough == input$borough & 
                category == input$category &
-               month >= input$dygraph_date_window[[1]], month <= input$dygraph_date_window[[2]])
+               date >= input$dygraph_date_window[[1]], date <= input$dygraph_date_window[[2]])
     
   })
   
   output$map <- renderLeaflet({
+    req(input$borough)
     
     boundary <- boroughs[boroughs$CTYUA12NM == input$borough,]
     bb <- as.vector(boundary@bbox)
@@ -104,7 +105,7 @@ server <- function(input, output, session) {
     popup <- paste0("<strong>Location: </strong>", points()$location,
                     "<br><strong>Borough: </strong>", points()$borough,
                     "<br><strong>Category: </strong>", points()$category,
-                    "<br><strong>Date: </strong>", points()$month)
+                    "<br><strong>Date: </strong>", points()$date)
     
     leafletProxy("map", data = points()) %>% 
       clearMarkerClusters() %>% 
