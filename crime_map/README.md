@@ -1,6 +1,6 @@
 ### Crime map
 
-<img src="https://github.com/cat-lord/shinyapps/blob/master/images/crime_map.jpg" alt="crime_map" width="500">
+![crime_map](https://github.com/cat-lord/shinyapps/blob/master/GIFS/crime_map.gif)
 
 ##### Overview
 This [shiny](http://shiny.rstudio.com) app enables users to interrogate open source police crime data recorded by Greater Manchester Police. 
