@@ -1,5 +1,3 @@
-### Crime map
-
 ![crime_map](https://github.com/cat-lord/shinyapps/blob/master/GIFs/crime_map.gif)
 
 ##### Overview
