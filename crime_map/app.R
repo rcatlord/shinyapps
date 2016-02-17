@@ -4,15 +4,16 @@ crimes <- read.csv("crime_data.csv", header = T)
 boroughs <-  readOGR("boroughs.geojson", "OGRGeoJSON")
 
 ui <- navbarPage(title = "Crime map",
-                 tabPanel("Interactive plots",
+                 tabPanel("Interactive plots", tags$head(
+                   tags$style("body {background-color: #bdbdbd; }")),
                           column(3,
                                  div(class="outer",
                                      tags$head(includeCSS('custom.css')),
                                      absolutePanel(id = "controls", class="panel panel-default", draggable = FALSE, fixed = TRUE, 
-                                                   top = 85, left = 80, right = "auto", bottom = "auto", height = "auto", width = 260,
+                                                   top = 95, left = 80, right = "auto", bottom = "auto", height = "auto", width = 300,
                                           h3("Instructions"),
-                                          p('This ', a('shiny', href = 'http://shiny.rstudio.com'), 'app allows you to interactively visualise Greater Manchester Police 
-                                            crime data downloaded from', a('data.police.uk', href = 'https://data.police.uk')),
+                                          p('This ', a('shiny', href = 'http://shiny.rstudio.com'), 'app allows you to interactively visualise 
+                                            crime recorded by Greater Manchester Police which were downloaded from', a('data.police.uk', href = 'https://data.police.uk')),
                                           p('Use the dropdown menus below to select the borough and crime category 
                                                    of interest.'), 
                                           p('Then zoom and pan around the map to explore clusters of crime. Click on
@@ -21,9 +22,9 @@ ui <- navbarPage(title = "Crime map",
                                           hr(),
                                           div(uiOutput('borough'), style = "color:#525252", align = "left"),
                                           div(uiOutput('category'), style = "color:#525252", align = "left")))),
-                            column(8,
+                            column(7, offset = 1,
                                    br(),
-                                   div(h4(textOutput("title"), align = "left"), style = "color:#525252"),
+                                   div(h4(textOutput("title"), align = "left"), style = "color:#f0f0f0"),
                                    fluidRow(
                                     leafletOutput("map", width = "100%", height = "400"),
                                             absolutePanel(id = "controls", class="panel panel-default", draggable = TRUE, fixed = TRUE,
@@ -35,7 +36,7 @@ ui <- navbarPage(title = "Crime map",
                  tabPanel("About",
                           fluidRow(
                             column(8, offset = 1,
-                                   includeMarkdown("about.md"), style = "color:grey"))))
+                                   includeMarkdown("about.md"), style = "color:#f0f0f0"))))
 
 server <- function(input, output, session) {
   
@@ -71,11 +72,11 @@ server <- function(input, output, session) {
       df.xts <- xts(df$n, order.by = as.Date(df$date, "%Y-%m-%d"), frequency = 12)
       
       dygraph(df.xts, main = NULL) %>%
-        dySeries("V1", label = "Crimes", color = "red", fillGraph = TRUE, strokeWidth = 2, drawPoints = TRUE, pointSize = 4) %>%
+        dySeries("V1", label = "Crimes", color = "white", fillGraph = TRUE, strokeWidth = 2, drawPoints = TRUE, pointSize = 4) %>%
         dyAxis("y", axisLabelWidth = 20) %>% 
         dyOptions(retainDateWindow = TRUE, includeZero = TRUE, drawGrid = FALSE,
-                  axisLineWidth = 2, axisLineColor = "#525252", axisLabelFontSize = 11, axisLabelColor = "#525252") %>% 
-        dyLegend(width = 200, show = "follow") %>% 
+                  axisLineWidth = 2, axisLineColor = "#f0f0f0", axisLabelFontSize = 11, axisLabelColor = "#f0f0f0") %>% 
+        dyLegend(width = 130, show = "follow") %>% 
         dyCSS("dygraph.css")
   })
   
