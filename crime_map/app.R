@@ -76,7 +76,6 @@ server <- function(input, output, session) {
         dyAxis("y", axisLabelWidth = 20) %>% 
         dyOptions(retainDateWindow = TRUE, includeZero = TRUE, drawGrid = FALSE,
                   axisLineWidth = 2, axisLineColor = "#f0f0f0", axisLabelFontSize = 11, axisLabelColor = "#f0f0f0") %>% 
-        dyLegend(width = 130, show = "follow") %>% 
         dyCSS("dygraph.css")
   })
   
