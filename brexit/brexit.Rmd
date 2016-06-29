@@ -1,0 +1,124 @@
+---
+title: "EU referendum results - 23 June 2016"
+resource_files:
+- local_authorities.cpg
+- local_authorities.dbf
+- local_authorities.prj
+- local_authorities.shp
+- local_authorities.shx
+runtime: shiny
+output:
+  flexdashboard::flex_dashboard:
+    keep_md: true
+    orientation: columns
+    social:
+    - twitter
+    - facebook
+    - pinterest
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard) 
+library(shiny)
+library(rgdal)
+library(leaflet)
+library(dplyr)
+library(RColorBrewer)
+library(highcharter)
+
+boundaries <- readOGR(".", "local_authorities", verbose = FALSE)
+```
+
+Column {data-width=750}
+-------------------------------------
+
+### Swing to / from vote LEAVE
+```{r}
+selected <- eventReactive(input$map_shape_click,  {
+    x <- input$map_shape_click
+    y <- x$id
+    y
+  })
+
+output$map <- renderLeaflet({
+
+popup <- paste0("<b>",boundaries$Area, " (", boundaries$Region, ")", "</b>",
+                "<br>", "Electorate: ", format(boundaries$Electrt, big.mark=",", scientific=FALSE))
+
+pal <- colorBin(c("#8c510a", "#d8b365", "#f6e8c3", "#e0f3f8", "#91bfdb", "#4575b4"), 
+                bins = c(-30, -20, -10, 0, 10, 20, 30))
+
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  setView(-2.547855, 54.00366, zoom = 6) %>% 
+  addPolygons(data = boundaries, fillColor = ~pal(Swing), fillOpacity = 0.8,
+              color = "white", weight = 1, popup = popup,
+            layerId = ~Area_Cd) %>%
+  addLegend(position = "topright", 
+            colors = c("#8c510a", "#d8b365", "#f6e8c3", "#e0f3f8", "#91bfdb", "#4575b4"), 
+            labels = c("-30 to -20", 
+                       "-20 to -10", 
+                       "-10 to 0", 
+                       "0 to 10", 
+                       "10 to 20", 
+                       "20 to 30"),
+            opacity = 0.8, title = "%")
+  
+})
+
+leafletOutput('map')  
+```
+
+
+Column {data-width=250}
+-------------------------------------
+
+### LEAVE %
+```{r}
+renderGauge({
+  leave <- 
+  if(is.null(input$map_shape_click)) {
+  round(sum(boundaries$Leave) / sum(boundaries$Vts_Cst) * 100, 1)
+} else{
+  round(boundaries[boundaries$Area_Cd == selected(), ]$Pct_Lev, 1)
+}
+
+  gauge(leave, min = 0, max = 100, symbol = '%', 
+        gaugeSectors(warning = c(0, 49), danger = c(50, 100)))
+})
+
+```
+
+### REMAIN %
+```{r}
+renderGauge({
+  remain <- 
+  if(is.null(input$map_shape_click)) {
+  round(sum(boundaries$Remain) / sum(boundaries$Vts_Cst) * 100, 1)
+} else{
+  round(boundaries[boundaries$Area_Cd == selected(), ]$Pct_Rmn, 1)
+}
+  
+  gauge(remain, min = 0, max = 100, symbol = '%', 
+        gaugeSectors(warning = c(0, 49), danger = c(50, 100)))
+})
+
+```
+
+### Turnout %
+```{r}
+renderGauge({
+  turnout <- 
+  if(is.null(input$map_shape_click)) {
+  round(sum(boundaries$Vts_Cst) / sum(boundaries$Electrt) * 100, 1)
+} else{
+  round(boundaries[boundaries$Area_Cd == selected(), ]$Pct_Trn, 1)
+}
+  gauge(turnout, min = 0, max = 100, symbol = '%', gaugeSectors(success = c(0, 100)))
+})
+```
+
+### Sources: 
+
+[The Electoral Commission](http://www.electoralcommission.org.uk/find-information-by-subject/elections-and-referendums/upcoming-elections-and-referendums/eu-referendum/electorate-and-count-information) and [Office for National Statistics](https://geoportal.statistics.gov.uk/geoportal/catalog/content/filelist.page?&pos=3&cat=#BD)
