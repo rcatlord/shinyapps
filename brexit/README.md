@@ -8,3 +8,7 @@ The [flexdashboard](http://rmarkdown.rstudio.com/flexdashboard/) R package was u
 
 ##### Licence
 The local authority vector boundaries for the UK were published by the Office for National Statistics and are available from [data.gov.uk](https://geoportal.statistics.gov.uk/geoportal/catalog/content/filelist.page?&pos=3&cat=#BD). This information is licensed under the terms of the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3).
+
+<br>
+
+The app is available at [https://pracademic.shinyapps.io/brexit] (https://pracademic.shinyapps.io/brexit)
