@@ -1,11 +1,7 @@
 ---
 title: "EU referendum results - 23 June 2016"
 resource_files:
-- local_authorities.cpg
-- local_authorities.dbf
-- local_authorities.prj
-- local_authorities.shp
-- local_authorities.shx
+- local_authorities.geojson
 runtime: shiny
 output:
   flexdashboard::flex_dashboard:
@@ -27,7 +23,7 @@ library(dplyr)
 library(RColorBrewer)
 library(highcharter)
 
-boundaries <- readOGR(".", "local_authorities", verbose = FALSE)
+boundaries <- readOGR("local_authorities.geojson", "OGRGeoJSON", verbose = FALSE)
 ```
 
 Column {data-width=750}
