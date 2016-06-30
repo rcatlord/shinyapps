@@ -49,7 +49,7 @@ leaflet() %>%
   addProviderTiles("CartoDB.Positron") %>%
   setView(-2.547855, 54.00366, zoom = 6) %>% 
   addPolygons(data = boundaries, fillColor = ~pal(Swing), fillOpacity = 0.8,
-              color = "white", weight = 1, popup = popup,
+              color = "#636363", weight = 1, popup = popup,
             layerId = ~Area_Cd) %>%
   addLegend(position = "topright", 
             colors = c("#8c510a", "#d8b365", "#f6e8c3", "#e0f3f8", "#91bfdb", "#4575b4"), 
