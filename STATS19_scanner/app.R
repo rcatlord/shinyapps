@@ -149,7 +149,7 @@ server <- function(input, output, session) {
         df <- dataInBounds()
         valueBox(
         format(nrow(df), format="d", big.mark=","), "Casualties", icon = NULL,
-        color = "black")
+        color = "light-blue")
     })
     
     output$KSIBox <- renderValueBox({
@@ -157,7 +157,7 @@ server <- function(input, output, session) {
         df <- df %>% filter(severity == "Fatal" | severity == "Serious")
         valueBox(
         format(nrow(df), format="d",big.mark=","), "Killed or Seriously Injured", icon = NULL,
-        color = "black")
+        color = "light-blue")
     })
     
     output$collisionBox <- renderValueBox({
@@ -165,16 +165,16 @@ server <- function(input, output, session) {
         df <- df %>% distinct(AREFNO)
         valueBox(
         format(nrow(df), format="d",big.mark=","), "Collisions", icon = NULL,
-        color = "black")
+        color = "light-blue")
     })
     
     
     ## Map ##
     
     output$map <- renderLeaflet({
-        leaflet(data) %>%  addProviderTiles("CartoDB.DarkMatter") %>%
+        leaflet(data) %>%  addProviderTiles("CartoDB.Positron") %>%
         fitBounds(~min(long), ~min(lat), ~max(long), ~max(lat)) %>%
-        addPolygons(data = boroughs, fill = F, color = "white", weight = 1.5, group = "Boroughs") %>% addLayersControl(
+        addPolygons(data = boroughs, fill = F, color = "#636363", weight = 1.5, group = "Boroughs") %>% addLayersControl(
         overlayGroups = "Boroughs",
         position = "topright",
         options = layersControlOptions(collapsed = FALSE)) %>%
@@ -187,7 +187,11 @@ server <- function(input, output, session) {
         if(nrow(casualties())==0) { leafletProxy("map") %>% clearMarkers()}
         else {
             leafletProxy("map", data = casualties() ) %>% clearMarkers() %>%
-            addCircleMarkers(~long, ~lat, color = ~pal(severity), radius = 5, stroke = FALSE, fillOpacity = 0.5, popup = ~text)
+            addCircleMarkers(~long, ~lat,
+            color = "#636363", stroke = TRUE, weight = 1,
+            fillColor = ~pal(severity), fillOpacity = 0.8,
+            radius = 5,
+            popup = ~text)
         }
     })
     
@@ -201,7 +205,7 @@ server <- function(input, output, session) {
         df %>%
         group_by(borough) %>%
         summarise(count = n()) %>%
-        ggvis(~borough, ~count, fill := "black") %>%
+        ggvis(~borough, ~count, fill := "#4292c6") %>%
         mutate(borough = reorder(borough, -count)) %>%
         layer_bars(stroke := "white") %>%
         add_axis("x", title = "", properties = axis_props(labels=list(angle=270, align="right"))) %>%
@@ -261,7 +265,7 @@ server <- function(input, output, session) {
         summarise(count = n()) %>%
         ggvis(~ageband, ~count, fill = ~sex) %>%
         layer_bars(stroke := "white") %>%
-        scale_nominal("fill", range = c("steelblue", "purple"), label=c("Male", "Female")) %>%
+        scale_nominal("fill", range = c("#a6dba0", "#c2a5cf"), label=c("Male", "Female")) %>%
         add_axis("x", title = "", properties = axis_props(labels=list(angle=270, align="right"))) %>%
         add_axis("y", title = "", format='d') %>%
         add_legend("fill", title = "Gender") %>%
