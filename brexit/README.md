@@ -7,7 +7,7 @@ This [shiny](http://shiny.rstudio.com) app uses voting data from [The Electoral 
 [Plotly's](https://plot.ly/r/) R graphing library, [Leaflet](https://rstudio.github.io/leaflet/), [formattable](https://github.com/renkun-ken/formattable) and [flexdashboard](http://rmarkdown.rstudio.com/flexdashboard/) were used in this [shiny](http://shiny.rstudio.com") app. Code was borrowed and adapted from Kyle Walker's wonderful [shiny app of neighborhood diversity](https://walkerke.shinyapps.io/neighborhood_diversity/).
 
 ##### Licence
-The local authority vector boundaries for the UK were published by the Office for National Statistics and are available from [here](https://geoportal.statistics.gov.uk/geoportal/catalog/content/filelist.page?&pos=3&cat=#BD). This information is licensed under the terms of the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3).
+The local authority vector boundaries for England and Wales were published by the Office for National Statistics and are available from [here](https://geoportal.statistics.gov.uk/geoportal/catalog/content/filelist.page?&pos=3&cat=#BD). This information is licensed under the terms of the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3).
 
 <br>
 
