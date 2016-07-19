@@ -1,4 +1,4 @@
-![STATS19_scanner](https://github.com/cat-lord/shinyapps/blob/master/GIFs/STATS19_scanner.gif)
+![STATS19_scanner](https://github.com/rcatlord/shinyapps/blob/master/GIFs/STATS19_scanner.gif)
 
 ##### Overview
 This Shiny application is designed to allow the user to interrogate road casualties reported in Greater London between 2005 and 2015.
