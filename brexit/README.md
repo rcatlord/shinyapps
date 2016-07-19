@@ -1,4 +1,4 @@
-![brexit](https://github.com/cat-lord/shinyapps/blob/master/GIFs/brexit.gif)
+![brexit](https://github.com/rcatlord/shinyapps/blob/master/GIFs/brexit.gif)
 
 ##### Overview
 This [shiny](http://shiny.rstudio.com) app uses voting data from [The Electoral Commission](http://www.electoralcommission.org.uk/find-information-by-subject/elections-and-referendums/upcoming-elections-and-referendums/eu-referendum/electorate-and-count-information) to explore the relationship between the votes cast during the EU Referendum (23 June 2016) and immigration levels by local authority. The app was inspired by a recent article in [theconversation.com/uk](http://theconversation.com/uk) called ['Hard Evidence: how areas with low immigration voted mainly for Brexit'](http://theconversation.com/hard-evidence-how-areas-with-low-immigration-voted-mainly-for-brexit-62138)
