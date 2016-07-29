@@ -1,0 +1,168 @@
+---
+title: "Local Indicators of Spatial Association"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: lumen
+    social: menu
+    source_code: https://github.com/cat-lord/shinyapps/tree/master/LISA
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard) ; library(shiny); library(shinythemes); library(rgdal) ; library(spdep); library(dplyr) ; library(ggplot2) ; library(leaflet)
+
+crimes <- read.csv("ward_offences_2014_15.csv", header = T)
+category <- as.character(unique(crimes$category))
+wards <- readOGR("wards.geojson", "OGRGeoJSON", verbose = FALSE)
+wards.nb <- poly2nb(wards, queen=TRUE) 
+listw <- nb2listw(wards.nb)
+```
+
+Inputs {.sidebar}
+-------------------------------------
+
+<br>
+
+This tool visualizes the type and strength of spatial autocorrelation in ward level crime data recorded by the Metropolitan and City of London Police during 2014/15.
+
+<br>
+
+**Instructions**
+
+Select an offence type:
+
+```{r}
+selectInput(inputId = "selectedCategory",
+                  label = NULL,
+                  choices = category, selected = category[5])
+
+selected <- reactive({
+    sub <- subset(crimes, category==input$selectedCategory)
+    wards@data <- left_join(wards@data, sub, by = "GSS_CODE")
+    wards$count_lag <- lag.listw(listw, wards$count)
+    count_mean <- mean(wards$count)
+    count_lag_mean <- mean(wards$count_lag) 
+    global_moran <- moran.test(wards$count, listw)
+    statistic <- (global_moran$estimate)
+    statistic <- round(statistic, 2)
+    lisa <- localmoran(wards$count, listw)
+    wards$quadrant <- c(rep(0,length(wards$count)))
+    significance <- 0.05
+    vec <- ifelse(lisa[,5] < significance, 1,0)
+    wards$quadrant[wards$count >= count_mean & wards$count_lag >= count_lag_mean]  <- 1
+    wards$quadrant[wards$count < count_mean & wards$count_lag < count_lag_mean]  <- 2
+    wards$quadrant[wards$count < count_mean & wards$count_lag >= count_lag_mean]  <- 3
+    wards$quadrant[wards$count >= count_mean & wards$count_lag < count_lag_mean]  <- 4
+    wards$quadrant.data <- wards$quadrant*vec
+    wards$quadrant.col[wards$quadrant.data==1] <- "High-High"
+    wards$quadrant.col[wards$quadrant.data==2] <- "Low-Low"
+    wards$quadrant.col[wards$quadrant.data==3] <- "Low-High"
+    wards$quadrant.col[wards$quadrant.data==4] <- "High-Low"
+    wards$quadrant.col[wards$quadrant.data==0] <- "Non-sig"
+    wards$fill <- factor(wards$quadrant.data+1)
+    wards$count_mean <- count_mean
+    wards$count_lag_mean <- count_lag_mean
+    wards$statistic <- statistic
+    wards <- subset(wards, select = c(ward, borough, count, count_lag, quadrant, quadrant.data, 
+                                      quadrant.col, fill, count_mean, count_lag_mean, statistic))
+  })
+```
+ 
+Then brush the points in the scatter plot to reveal the Local Moran's I values on the map and in a table. A first order, Queen’s contiguity spatial weights matrix was used.    
+
+<br>
+
+**Credits**   
+The [spdep()](https://cran.r-project.org/web/packages/spdep/index.html) package was used to calculate the Moran's I values. I found Alessandra Carioli's blog post ["Moran plots in ggplot2"](https://aledemogr.wordpress.com/2015/04/22/moran-plots-in-ggplot2/) particularly helpful for plotting the results. Check [Anselin (1995)](http://onlinelibrary.wiley.com/doi/10.1111/j.1538-4632.1995.tb00338.x/abstract) for more information on LISA maps. 
+
+**Data sources**   
+London's ward boundary files were downloaded from the [London DataStore](http://data.london.gov.uk/dataset/statistical-gis-boundary-files-london). The police recorded crime data were extracted from the [Metropolitan Police](http://maps.met.police.uk/tables.htm) and [City of London Police](https://www.cityoflondon.police.uk/about-us/performance-and-statistics/Pages/Crime_figures.aspx) websites. Please note that the crime data may not exactly match current published figures. 
+ 
+ 
+
+Row {data-height=650}
+-----------------------------------------------------------------------
+    
+###
+    
+```{r}
+ output$plot <- renderPlot({
+    ggplot(selected()@data, aes(count, count_lag)) +
+      geom_point(aes(fill = selected()$fill), colour="black", size = 3, shape = 21)+
+      scale_fill_manual(name="",
+                        values = c("1" = "white", "2" = "red", "3" = "blue", "4" = "cyan", "5" ="pink"),
+                        labels=c("Non-sig",
+                                 paste0("High-High (", sum(selected()$quadrant.data==1), ")"),  
+                                 paste0("Low-Low (", sum(selected()$quadrant.data==2), ")"),
+                                 paste0("Low-High (", sum(selected()$quadrant.data==3), ")"),
+                                 paste0("High-Low (", sum(selected()$quadrant.data==4), ")"))) +
+      geom_vline(xintercept = unique(selected()$count_mean), colour = "grey", linetype = "longdash") +
+      geom_hline(yintercept = unique(selected()$count_lag_mean), colour = "grey", linetype = "longdash") +
+      stat_smooth(method="lm", se=FALSE, colour = "black", size = 0.5) +
+      xlab("\nCount of offences per ward") +
+      ylab("\nLag of offences per ward") +
+      theme_bw() +
+      ggtitle(paste0("Moran's I: ", unique(selected()$statistic),"\n")) +
+      theme(plot.title = element_text(color = "darkorchid")) 
+  })
+
+plotOutput("plot", height = 400, brush = brushOpts(id = "plot_brush"))
+```
+   
+###
+
+```{r}
+  output$map <- renderLeaflet({
+    factpal <- colorFactor(c("#f0f0f0", "red", "blue", "cyan", "pink"), 
+                domain = c("0", "1", "2", "3", "4"))
+    
+    popup <- paste0("<strong>Ward: </strong>",
+                         selected()$ward,
+                      "<br><strong>Borough: </strong>",
+                      selected()$borough)
+    
+    leaflet() %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      setView(-0.112270, 51.498915, 10) %>%
+      addPolygons(data = selected(), fillColor = ~factpal(quadrant.data),
+                  fillOpacity = 0.7, color = "black", weight = 1, popup = popup) %>% 
+      addLegend(position = "topright", colors = c("#f0f0f0", "red", "blue", "cyan", "pink"),
+                labels = c("Non-sig", "High-High", "Low-Low", "Low-High", "High-Low"), opacity = 0.7)
+  })
+  
+  brushed <- eventReactive(input$plot_brush, {
+    x <- brushedPoints(selected(), input$plot_brush)
+  })
+  
+  observe({
+    req(brushed())
+    
+    leafletProxy('map') %>%
+      clearGroup(group = 'brushed') %>%
+      addPolygons(data = brushed(), fill = FALSE, color = '#FFFF00',
+                  opacity = 1, group = 'brushed')
+    
+  })
+  
+  leafletOutput("map")
+```   
+ 
+Row {data-height=350}
+-----------------------------------------------------------------------
+ 
+### 
+    
+```{r}
+output$table <- DT::renderDataTable({
+    tbl <- brushed() %>%   
+      as.data.frame() %>% 
+      select(Ward = ward, Borough = borough, Offences = count, LISA = quadrant.col)
+    
+  }, rownames = FALSE, options = list(pageLength = 5, dom = 'tip',
+                                      autoWidth = TRUE))
+
+DT::dataTableOutput("table")
+```
+ 
