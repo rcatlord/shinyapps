@@ -1,0 +1,256 @@
+---
+title: "STATS19 scanner"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: lumen
+    social: menu
+    source_code: https://github.com/rcatlord/shinyapps/tree/master/STATS19_scanner
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard) ; library(shiny) ; library(dplyr) ; library(rgdal) ; library(leaflet) ; library(RColorBrewer) ; library(highcharter) ; library(DT)
+
+data <- readRDS(file="casualties_2005-15.Rda")
+data$date <- as.Date(data$date, "%Y-%m-%d")
+data$severity <- factor(data$severity, levels= c("Fatal", "Serious", "Slight"), ordered = TRUE)
+data$day <- factor(data$day, levels=c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"), ordered=T)
+boroughs <-  readOGR("boroughs.geojson", "OGRGeoJSON")
+```
+
+```{r reactive}
+casualties <- reactive({
+  if (is.null(input$borough))
+    subset(data, date >= input$date_range[1] & date <= input$date_range[2] &
+             mode %in% input$mode &
+             severity %in% input$severity)
+  else
+    subset(data, date >= input$date_range[1] & date <= input$date_range[2] &
+             borough %in% input$borough &
+             mode %in% input$mode &
+             severity %in% input$severity)
+})
+
+dataInBounds <- reactive({
+        if (is.null(input$map_bounds))
+        return(df[FALSE,])
+        bounds <- input$map_bounds
+        latRng <- range(bounds$north, bounds$south)
+        lngRng <- range(bounds$east, bounds$west)
+        
+        subset(casualties(),
+        lat >= latRng[1] & lat <= latRng[2] &
+        long >= lngRng[1] & long <= lngRng[2])
+})
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+dateRangeInput("date_range",
+               label = "Date range",
+               start = "2015-01-01",
+               end = "2015-12-31",
+               format = "yyyy-mm-dd")
+
+selectInput("borough", 
+            label = "Borough", 
+            choices = c("All" = "", levels(data$borough)),
+            multiple = TRUE)
+
+selectInput("mode", 
+            label = "Mode of travel",
+            choices = levels(data$mode),
+            selected = "Pedal Cycle", 
+            multiple = TRUE)
+
+selectInput("severity", 
+            label = "Casualty severity",
+            choices = levels(data$severity),
+            selected = c("Fatal", "Serious", "Slight"), 
+            multiple = TRUE)
+```
+
+---
+
+<br>
+This [Shiny](https://cran.r-project.org/web/packages/shiny/index.html) application is designed to allow the user to interrogate road casualties reported in Greater London between 2005 and 2015.   
+
+**Data sources:** STATS19 collision data for Greater London are available from [Transport for London](https://www.tfl.gov.uk/corporate/publications-and-reports/road-safety) and a guide to the variables can be found [here](https://www.tfl.gov.uk/cdn/static/cms/documents/collision-data-guide.pdf).
+
+**Credits:** The [flexdashboard](https://cran.r-project.org/web/packages/flexdashboard/index.html), [leaflet](https://cran.r-project.org/web/packages/leaflet/index.html), [highcharter](https://cran.r-project.org/web/packages/highcharter/index.html) and [DT](https://cran.r-project.org/web/packages/DT/index.html) R packages were used in this Shiny app. Some of the code for the STATS19_scanner app was adapted from [Superzip](http://shiny.rstudio.com/gallery/superzip-example.html) by Joe Cheng. The ui was inspired by [blackspot](http://blackspot.org.uk) by Ben Moore and [Twin Cities Buses](https://gallery.shinyapps.io/086-bus-dashboard/) by Aron Atkins.
+
+**Licence** Contains National Statistics data © Crown copyright and database right [2015] and Contains Ordnance Survey data © Crown copyright and database right [2015]. 
+
+Row {data-height=50}
+-----------------------------------------------------------------------
+
+###
+```{r}
+renderText({
+  df <- dataInBounds()
+  print(paste0(format(nrow(df), format="d", big.mark=","), " casualties"))
+})
+```
+
+###
+```{r}
+renderText({
+  df <- dataInBounds() %>%
+    filter(severity == "Fatal" | severity == "Serious")
+  print(paste0(format(nrow(df), format="d", big.mark=","), " KSIs"))
+})
+```
+
+###
+```{r}
+renderText({
+  df <- dataInBounds() %>% 
+    distinct(AREFNO)
+  print(paste0(format(nrow(df), format="d", big.mark=","), " collisions"))
+})
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+```{r}
+pal <- colorFactor(c("#b10026", "#fd8d3c", "#ffeda0"), domain = c("Fatal", "Serious", "Slight"), ordered = TRUE)
+
+output$map <- renderLeaflet({
+  leaflet(data = casualties()) %>%
+    addProviderTiles("CartoDB.Positron", options = tileOptions(minZoom = 10)) %>%
+    addPolygons(data = boroughs, fill = F, color = "#636363", weight = 1.5) %>% 
+    addCircleMarkers(data = casualties(), ~long, ~lat, 
+                         color = "#636363", stroke = TRUE, weight = 1, 
+                         fillColor = ~pal(severity), fillOpacity = 0.8, 
+                         radius = 5, popup = ~text) %>% 
+    fitBounds(lng1 = max(casualties()$long), lat1 = max(casualties()$lat),
+              lng2 = min(casualties()$long), lat2 = min(casualties()$lat)) %>% 
+    addLegend(position = "topright", colors = c("#b10026", "#fd8d3c", "#ffeda0"),
+              labels = c("Fatal", "Serious", "Slight"), opacity = 1, title = "Severity")
+  })
+
+observe({
+  leafletProxy('map', session) %>%
+    clearMarkers()
+  })
+
+leafletOutput("map") 
+```   
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Boroughs
+
+```{r}
+output$borough_chart <- renderHighchart({
+
+  df <- dataInBounds() %>% 
+    group_by(borough) %>%
+    summarise(count = n()) %>% 
+    arrange(desc(count))
+  
+  highchart() %>%
+    hc_title(text = "Casualties by borough") %>%
+    hc_xAxis(categories = unique(df$borough)) %>% 
+    hc_add_series(name = "Frequency", data = df$count, type = 'column', color = "#636363") %>%
+    hc_legend(enabled = FALSE) %>% 
+    hc_add_theme(hc_theme_smpl())
+})
+
+highchartOutput('borough_chart')
+```   
+ 
+### Months
+
+```{r}
+output$month_chart <- renderHighchart({
+
+  df <- dataInBounds() %>%
+    group_by(severity, month) %>%
+    summarise(count = n()) %>%
+    mutate(month = factor(month.name[month], levels = month.name)) %>% 
+    arrange(month)
+    
+  highchart() %>%
+  hc_title(text = "Casualties by month") %>% 
+  hc_xAxis(categories = unique(df$month)) %>% 
+  hc_add_series(name = "Fatal", data = df[which(df$severity == "Fatal"), ]$count, color = "#b10026") %>%
+  hc_add_series(name = "Serious", data = df[which(df$severity == "Serious"), ]$count, color = "#fd8d3c") %>%
+  hc_add_series(name = "Slight", data = df[which(df$severity == "Slight"), ]$count, color = "#ffeda0") %>% 
+  hc_yAxis(title = list(text = ""), labels = list(format = "{value}")) %>% 
+  hc_legend(enabled = FALSE) %>% 
+  hc_add_theme(hc_theme_smpl())
+})
+
+highchartOutput('month_chart')
+```   
+ 
+### Hours
+
+```{r}
+output$hour_chart <- renderHighchart({
+
+  df <- dataInBounds() %>%
+    group_by(light, hour) %>%
+    summarise(count = n()) %>% 
+    mutate(hour = factor(hour)) %>% 
+    arrange(hour)
+
+  highchart() %>%
+  hc_title(text = "Casualties by hour") %>% 
+  hc_xAxis(categories = unique(df$hour)) %>% 
+  hc_add_series(name = "Dark", data = df[which(df$light == "Dark"), ]$count, type = 'column', color = "midnightblue") %>%
+  hc_add_series(name = "Daylight", data = df[which(df$light == "Daylight"), ]$count, type = 'column', color = "yellow") %>%
+  hc_yAxis(title = list(text = ""), labels = list(format = "{value}")) %>% 
+  hc_legend(enabled = FALSE) %>% 
+  hc_add_theme(hc_theme_smpl())
+})
+
+highchartOutput('hour_chart')
+```
+
+### Demographics
+
+```{r}
+output$demog_chart <- renderHighchart({
+
+  df <- dataInBounds() %>%
+    group_by(sex, ageband) %>%
+    summarise(count = n()) %>%
+    arrange(ageband) %>% 
+    mutate(ageband = as.character(ageband)) %>% 
+    mutate(ageband = replace(ageband, is.na(ageband), "Unknown"))
+  
+  highchart() %>%
+  hc_title(text = "Casualties by ageband and gender") %>% 
+  hc_xAxis(categories = unique(df$ageband)) %>% 
+  hc_add_series(name = "Female", data = df[which(df$sex == "Female"), ]$count, type = 'column', color = "#c2a5cf") %>%
+  hc_add_series(name = "Male", data = df[which(df$sex == "Male"), ]$count, type = 'column', color = "#a6dba0") %>%
+  hc_yAxis(title = list(text = ""), labels = list(format = "{value}")) %>% 
+  hc_legend(enabled = FALSE) %>% 
+  hc_add_theme(hc_theme_smpl())
+})
+
+highchartOutput('demog_chart')
+```
+
+### Data
+
+```{r}
+output$table <- DT::renderDataTable({
+  
+  df <- dataInBounds() %>%
+    select(AREFNO, Date = date, Mode = mode, Severity = severity, Sex = sex, Ageband = ageband)
+    
+  }, rownames = FALSE, options = list(pageLength = 5, dom = 'tip',
+                                      autoWidth = TRUE, columnDefs = list(list(className = 'dt-left', targets = 0:3))))
+
+DT::dataTableOutput("table")
+```
