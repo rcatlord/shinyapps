@@ -11,3 +11,12 @@ The [leaflet](https://rstudio.github.io/leaflet/) and [dygraphs](https://rstudio
 
 ##### Licence
 The vector boundaries for Greater Manchester's metropolitan districts were published by the Office for National Statistics and are available from [data.gov.uk](https://data.gov.uk/dataset/county-and-unitary-authorities-ew-2012-boundaries-full-extent). This information is licensed under the terms of the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3).
+
+*****
+
+*To run the app locally just execute the following R code:*
+
+``` r
+install.packages(c("shiny", "sp", "rgdal", "leaflet", "dygraphs", "xts", "tidyverse", "markdown"))
+shiny::runGitHub("rcatlord/shinyapps", subdir = "crime_map")
+```
