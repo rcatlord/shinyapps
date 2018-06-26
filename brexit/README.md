@@ -11,4 +11,4 @@ The local authority vector boundaries for England and Wales were published by th
 
 <br>
 
-The app is available at [https://rcatlord.shinyapps.io/brexit] (https://pracademic.shinyapps.io/brexit)
+The app is available at [https://rcatlord.shinyapps.io/brexit](https://pracademic.shinyapps.io/brexit)
